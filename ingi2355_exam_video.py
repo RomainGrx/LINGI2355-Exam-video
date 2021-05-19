@@ -3,7 +3,7 @@
 """
 @author : Romain Graux
 @date : 2021 May 17, 23:18:19
-@last modified : 2021 May 19, 15:12:10
+@last modified : 2021 May 19, 21:11:38
 """
 
 from manim import *
@@ -227,3 +227,158 @@ int A = 42;
             *[Uncreate(v) for v in all_vec], rendered_code.animate.shift(7 * LEFT)
         )
         self.wait(2)
+
+
+class ASMStates(Scene):
+    def get_data_access_block(self, height=2.5, width=3.7, values=None):
+        block = VGroup()
+        rect = Rectangle(color=WHITE, height=height, width=width)
+        h_line = Line(rect.get_left(), rect.get_right()).shift(0.3 * rect.height * UP)
+
+        title_text = Text("DataAccess A")
+        title_text.scale(0.7)
+        title_text.set_color(BLUE)
+        title_text.move_to(VGroup(h_line, VectorizedPoint(rect.get_top())))
+
+        attrs_text = ["Type:", "Address:", "Successor:", "Child:", "Flags:"]
+
+        attrs = Paragraph(*attrs_text, name="attributes")
+        attrs.scale(0.5)
+        attrs.next_to(h_line.get_left(), DOWN + RIGHT, buff=SMALL_BUFF)
+
+        values_text = values or ["IN", "0x9F3B", "0x6DFF", "0xF3BB", "0xFF24"]
+
+        values = Paragraph(*values_text, name="values")
+        values.scale(0.5)
+        values.next_to(h_line.get_right(), DOWN + LEFT, buff=SMALL_BUFF)
+
+        block.add(rect, h_line, title_text, attrs, values)
+
+        return block
+
+    def get_asm(self, width, height, name):
+        asm = VGroup()
+
+        rect = RoundedRectangle(color=BLUE, width=width, height=height)
+        rect.set_fill(BLUE, opacity=0.05)
+
+        name_asm = Text(name, color=BLUE)
+        name_asm.scale(0.4)
+        move_to = rect.get_center() + np.array([-rect.height / 2, rect.width / 2, 1])
+        name_asm.next_to(rect.get_left() + rect.get_top(), DOWN + RIGHT, MED_SMALL_BUFF)
+
+        asm.add(rect, name_asm)
+        return asm
+
+    def get_state(self, bits, radius=0.5, scale_text=0.2):
+        circle = Circle(radius=radius, color=LIGHT_BROWN, fill_opacity=0.5)
+
+        text = Text(bits)
+        text.move_to(circle)
+        text.scale(scale_text)
+
+        circle_text = VGroup(circle, text)
+
+        return circle_text
+
+    def construct(self):
+        data_access_block = self.get_data_access_block()
+        data_access_block.move_to(ORIGIN)
+
+        self.play(Create(data_access_block))
+        self.play(Circumscribe(data_access_block))
+        self.wait(0)
+
+        data_access_block.generate_target()
+        data_access_block.target.shift(5.5 * LEFT + 2.5 * UP)
+        data_access_block.target.scale(0.75)
+
+        self.play(
+            MoveToTarget(data_access_block),
+        )
+        data_access_block = data_access_block.target
+
+        asm = self.get_asm(
+            0.9 * config.frame_width,
+            0.45 * config.frame_height,
+            "Atomic State Machine",
+        )
+        asm.shift(1.1 * DOWN)
+
+        surr_flags = Rectangle(
+            color=BLUE, width=0.95 * data_access_block.width, height=0.285
+        ).move_to(data_access_block.get_center() + 0.58 * DOWN)
+        surr_flags.set_fill(BLUE, opacity=0.25)
+
+        self.play(Create(surr_flags))
+
+        self.play(
+            Transform(surr_flags, asm),
+        )
+
+        arrow_messages = [
+            None,
+            "Read satisfied",
+            "Task finished",
+            "Successor registered",
+            "Message ack",
+        ]
+        action_messages = [
+            None,
+            "Run task",
+            None,
+            "Send read satisfied\nto successor",
+            "Delete",
+        ]
+
+        radius = 0.5
+        first_ = asm.get_left() + RIGHT
+        last_ = asm.get_right() + LEFT
+        dist_states = (last_ - first_) / 4
+
+        states_group = VGroup()
+        for idx, (bits, arrow_message, action) in enumerate(
+            zip(range(5), arrow_messages, action_messages)
+        ):
+            bits = "0b" + "0" * (4 - bits) + "1" * bits
+
+            state = self.get_state(bits, scale_text=0.25, radius=radius).move_to(
+                first_ + idx * dist_states
+            )
+
+            prev_state = (
+                states_group.submobjects[-1] if len(states_group.submobjects) else None
+            )
+
+            if prev_state:
+                arrow = Arrow(prev_state, state, color=WHITE, buff=0)
+                text = Text(arrow_message)
+                text.scale(0.3)
+                text.next_to(arrow, UP, MED_LARGE_BUFF)
+                # text.shift((dist_states - 2 * radius) * LEFT / 5)
+                arrow_text_mobj = VGroup(arrow, text)
+
+                self.play(Create(arrow_text_mobj))
+                self.wait()
+
+                states_group.add(arrow_text_mobj)
+
+            self.play(Create(state))
+            self.wait()
+
+            if action:
+                # theta = PI / 4
+                action_mobj = Paragraph(
+                    *action.split("\n"), color=YELLOW, alignment="center"
+                )
+                action_mobj.scale(0.3)
+                action_mobj.next_to(state, DOWN, MED_LARGE_BUFF)
+                # action_mobj.rotate(theta, about_point=state.get_center())
+
+                self.play(Write(action_mobj))
+                self.wait()
+                states_group.add(action_mobj)
+
+            states_group.add(state)
+
+        self.wait(3)
