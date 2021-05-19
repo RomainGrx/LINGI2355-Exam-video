@@ -3,7 +3,7 @@
 """
 @author : Romain Graux
 @date : 2021 May 17, 23:18:19
-@last modified : 2021 May 19, 21:11:38
+@last modified : 2021 May 19, 23:21:16
 """
 
 from manim import *
@@ -28,11 +28,11 @@ class Title(Scene):
 
         self.play(FadeIn(paper))
 
-        self.wait(1)
+        self.wait()
 
         self.play(Write(in_5_minutes))
 
-        self.wait(3)
+        self.wait()
 
 
 class CoresEvolution(GraphScene):
@@ -85,9 +85,9 @@ class CoresEvolution(GraphScene):
         for x, y in EvolutionCPUGraph.CPU_CORES.items():
             d = Dot(color=BLUE).move_to(self.coords_to_point(x, y))
             self.add(d)
-            self.wait(0.2)
+            self.wait()
 
-        self.wait(2)
+        self.wait()
 
 
 class DataDependencies(Scene):
@@ -124,7 +124,7 @@ int A = 42;
 
         self.play(Create(rendered_code))
 
-        self.wait(0)
+        self.wait()
 
         # Arrow decleration
         def step_arrow():
@@ -177,7 +177,7 @@ int A = 42;
 
         self.play(Create(parent1), Create(arrow))
 
-        self.wait(0)
+        self.wait()
 
         child1 = get_default_task("A", ORANGE, tasks_pos[1])
         parent1_to_child1 = get_arrow_between_tasks(parent1, child1, "Child")
@@ -188,7 +188,7 @@ int A = 42;
             Create(parent1_to_child1),
         )
 
-        self.wait(0)
+        self.wait()
 
         parent2 = get_default_task("A", BLUE, tasks_pos[2])
         parent1_to_parent2 = get_arrow_between_tasks(parent1, parent2, "Successor")
@@ -199,7 +199,7 @@ int A = 42;
             Create(parent1_to_parent2),
         )
 
-        self.wait(0)
+        self.wait()
 
         child2 = get_default_task("A", ORANGE, tasks_pos[3])
         parent2_to_child2 = get_arrow_between_tasks(parent2, child2, "Child")
@@ -210,7 +210,7 @@ int A = 42;
             Create(parent2_to_child2),
         )
 
-        self.wait(2)
+        self.wait()
 
         all_vec = (
             arrow,
@@ -226,7 +226,7 @@ int A = 42;
         self.play(
             *[Uncreate(v) for v in all_vec], rendered_code.animate.shift(7 * LEFT)
         )
-        self.wait(2)
+        self.wait()
 
 
 class ASMStates(Scene):
@@ -287,7 +287,7 @@ class ASMStates(Scene):
 
         self.play(Create(data_access_block))
         self.play(Circumscribe(data_access_block))
-        self.wait(0)
+        self.wait()
 
         data_access_block.generate_target()
         data_access_block.target.shift(5.5 * LEFT + 2.5 * UP)
@@ -327,7 +327,7 @@ class ASMStates(Scene):
             None,
             "Run task",
             None,
-            "Send read satisfied\nto successor",
+            "Send read satisfied\n      to successor",
             "Delete",
         ]
 
@@ -337,6 +337,8 @@ class ASMStates(Scene):
         dist_states = (last_ - first_) / 4
 
         states_group = VGroup()
+        arrows_group = VGroup()
+        actions_group = VGroup()
         for idx, (bits, arrow_message, action) in enumerate(
             zip(range(5), arrow_messages, action_messages)
         ):
@@ -361,24 +363,56 @@ class ASMStates(Scene):
                 self.play(Create(arrow_text_mobj))
                 self.wait()
 
-                states_group.add(arrow_text_mobj)
+                arrows_group.add(arrow_text_mobj)
 
             self.play(Create(state))
             self.wait()
 
             if action:
                 # theta = PI / 4
-                action_mobj = Paragraph(
-                    *action.split("\n"), color=YELLOW, alignment="center"
-                )
+                action_mobj = Paragraph(*action.split("\n"), color=YELLOW)
                 action_mobj.scale(0.3)
                 action_mobj.next_to(state, DOWN, MED_LARGE_BUFF)
                 # action_mobj.rotate(theta, about_point=state.get_center())
 
                 self.play(Write(action_mobj))
                 self.wait()
-                states_group.add(action_mobj)
+                actions_group.add(action_mobj)
 
             states_group.add(state)
 
-        self.wait(3)
+        self.wait()
+
+        def get_message_mobj(scale=0.25, opacity=1):
+            message = SVGMobject("ressources/svg/message.svg")
+            message.set_fill(WHITE, opacity=opacity)
+            message.scale(scale)
+            return message
+
+        def get_lock_mobj(scale=0.25, opacity=1):
+            message = SVGMobject("ressources/svg/lock.svg")
+            message.set_fill(RED, opacity=opacity)
+            message.scale(scale)
+            return message
+
+        messages_group = VGroup(*[get_message_mobj() for _ in arrows_group])
+        for message, arrow in zip(messages_group, arrows_group):
+            message.next_to(arrow, DOWN, SMALL_BUFF)
+            message.shift(0.1 * LEFT + OUT)
+
+        self.play(FadeIn(messages_group))
+        self.wait()
+
+        locks_group = VGroup()
+        for arrow_mobj, message_mobj in zip(arrows_group, messages_group):
+            lock_mobj = get_lock_mobj()
+            lock_mobj.move_to(message_mobj.get_center())
+            locks_group.add(lock_mobj)
+
+        self.play(FadeIn(locks_group), FadeOut(messages_group))
+
+        self.play(
+            *[elem.animate.shift(config.frame_width * LEFT) for elem in self.mobjects]
+        )
+
+        self.wait()
