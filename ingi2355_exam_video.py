@@ -3,7 +3,7 @@
 """
 @author : Romain Graux
 @date : 2021 May 17, 23:18:19
-@last modified : 2021 May 19, 23:21:16
+@last modified : 2021 May 19, 23:49:15
 """
 
 from manim import *
@@ -111,7 +111,7 @@ int A = 42;
             code=code,
             tab_width=4,
             background="window",
-            language="cpp",
+            language="java",
             font="Monospace",
         )
         rendered_code.width = 5
@@ -136,8 +136,6 @@ int A = 42;
             arrow.next_to(rendered_code, RIGHT)
             arrow.shift(-2 * step_arrow())
             return arrow
-
-        arrow = get_initial_arrow(color=BLUE)
 
         def get_default_task(name, color, pos):
             circle = Circle(radius=0.5, color=color, fill_opacity=0.5)
@@ -173,6 +171,8 @@ int A = 42;
         tasks_grid = [(2, 2), (5, 1), (2, -1), (5, -2)]
         tasks_pos = list(map(lambda g: g[0] * RIGHT + g[1] * UP, tasks_grid))
 
+        arrow = get_initial_arrow(color=WHITE)
+
         parent1 = get_default_task("A", BLUE, tasks_pos[0])
 
         self.play(Create(parent1), Create(arrow))
@@ -182,8 +182,12 @@ int A = 42;
         child1 = get_default_task("A", ORANGE, tasks_pos[1])
         parent1_to_child1 = get_arrow_between_tasks(parent1, child1, "Child")
 
+        arrow.generate_target()
+        # arrow.target.set_fill(ORANGE, 1)
+        arrow.target.shift(2 * step_arrow())
+
         self.play(
-            arrow.animate.shift(2 * step_arrow()),
+            MoveToTarget(arrow),
             Create(child1),
             Create(parent1_to_child1),
         )
@@ -193,8 +197,11 @@ int A = 42;
         parent2 = get_default_task("A", BLUE, tasks_pos[2])
         parent1_to_parent2 = get_arrow_between_tasks(parent1, parent2, "Successor")
 
+        # arrow.target.set_fill(BLUE, 1)
+        arrow.target.shift(2 * step_arrow())
+
         self.play(
-            arrow.animate.shift(2 * step_arrow()),
+            MoveToTarget(arrow),
             Create(parent2),
             Create(parent1_to_parent2),
         )
@@ -204,8 +211,11 @@ int A = 42;
         child2 = get_default_task("A", ORANGE, tasks_pos[3])
         parent2_to_child2 = get_arrow_between_tasks(parent2, child2, "Child")
 
+        # arrow.target.set_fill(ORANGE, 1)
+        arrow.target.shift(2 * step_arrow())
+
         self.play(
-            arrow.animate.shift(2 * step_arrow()),
+            MoveToTarget(arrow),
             Create(child2),
             Create(parent2_to_child2),
         )
@@ -271,7 +281,7 @@ class ASMStates(Scene):
         return asm
 
     def get_state(self, bits, radius=0.5, scale_text=0.2):
-        circle = Circle(radius=radius, color=LIGHT_BROWN, fill_opacity=0.5)
+        circle = Circle(radius=radius, color=ORANGE, fill_opacity=0.5)
 
         text = Text(bits)
         text.move_to(circle)
