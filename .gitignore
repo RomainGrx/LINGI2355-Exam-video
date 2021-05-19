@@ -1,0 +1,8 @@
+# vim
+.swp
+
+# media manim
+media/*
+
+# python
+__pycache__
