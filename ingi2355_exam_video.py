@@ -3,7 +3,7 @@
 """
 @author : Romain Graux
 @date : 2021 May 17, 23:18:19
-@last modified : 2021 May 20, 13:55:42
+@last modified : 2021 May 20, 14:35:12
 """
 
 from manim import *
@@ -254,6 +254,15 @@ def get_lock_mobj(scale=0.25, opacity=1):
     return message
 
 
+def get_cpu_mobj(color, scale):
+    cpu_mobj = SVGMobject("ressources/svg/cpu.svg")
+    if color:
+        cpu_mobj.set_fill(color, opacity=1)
+    if scale:
+        cpu_mobj.scale(scale)
+    return cpu_mobj
+
+
 class ASMStates(Scene):
     def get_data_access_block(self, height=2.5, width=3.7, values=None):
         block = VGroup()
@@ -432,14 +441,6 @@ class ASMStates(Scene):
 
 
 class SchedulerWaitFree(Scene):
-    def get_cpu_mobj(self, color, scale):
-        cpu_mobj = SVGMobject("ressources/svg/cpu.svg")
-        if color:
-            cpu_mobj.set_fill(color, opacity=1)
-        if scale:
-            cpu_mobj.scale(scale)
-        return cpu_mobj
-
     def stack(self, mobj, num, title=None):
         stack = VGroup()
         for n in range(num):
@@ -457,7 +458,6 @@ class SchedulerWaitFree(Scene):
         return stack
 
     def construct(self):
-        # TODO: cpu that talks to say : But how ready threads execute a task?
         _TOP = config.frame_height / 2 * UP
         _BOTTOM = -_TOP
         _RIGHT = config.frame_width / 2 * RIGHT
@@ -490,7 +490,7 @@ class SchedulerWaitFree(Scene):
                 Line(_TOP + _LEFT, _BOTTOM + _LEFT), V_LINES.submobjects[0]
             ).get_center()
 
-        cpu_mobj = self.get_cpu_mobj(None, 0.4)
+        cpu_mobj = get_cpu_mobj(None, 0.4)
         queue_mobj = Rectangle(width=0.33 * COL_SPACE, height=0.2 * config.frame_height)
         queue_mobj.set_fill(BLUE, opacity=0.25)
 
@@ -662,8 +662,6 @@ class SchedulerWaitFree(Scene):
             .rotate(PI / 2)
             .next_to(lock_fill_scheduler_mobj, LEFT, SMALL_BUFF)
         )
-        print(lock_fill_scheduler_mobj.get_left())
-        print(lock_fill_scheduler_mobj.get_top())
 
         lock_mobj = get_lock_mobj(scale=0.15)
         lock_mobj.next_to(
@@ -678,4 +676,65 @@ class SchedulerWaitFree(Scene):
         )
 
         self.play(Create(lock_creator_queues_mobj), Create(lock_scheduler_mobj))
+        self.wait()
+
+        self.play(
+            *list(
+                map(
+                    Uncreate,
+                    [
+                        margin_texts_group,
+                        creators_group,
+                        lock_scheduler_mobj,
+                        lock_creator_queues_mobj,
+                        scheduler_queue_mobj,
+                        workers_group,
+                        queues_group,
+                        arrows_group,
+                        queues_to_scheduler_arrows_group,
+                        scheduler_to_workers_arrows_group,
+                    ],
+                )
+            )
+        )
+        self.wait()
+
+
+class ButHowWorkers(Scene):
+    def construct(self):
+        rect_text = Rectangle(
+            width=0.75 * config.frame_width, height=0.75 * config.frame_height
+        )
+        but_how = Text("But how", size=1.5).next_to(
+            rect_text.get_left() * RIGHT + rect_text.get_top() * UP,
+            DOWN + RIGHT,
+            SMALL_BUFF,
+        )
+        workers_thread = Text("worker threads", size=1.5, color=BLUE).move_to(
+            rect_text.get_center()
+        )
+
+        receive_work = Text("receive work?", size=1.5).next_to(
+            rect_text.get_right() * RIGHT + rect_text.get_bottom() * UP,
+            UP + LEFT,
+            SMALL_BUFF,
+        )
+
+        but_how_title = VGroup(but_how, workers_thread, receive_work)
+
+        cpu_mobj = get_cpu_mobj(None, 0.75).next_to(
+            rect_text.get_top() * UP + rect_text.get_right() * RIGHT, DOWN + LEFT, 0
+        )
+        interrogation_mobj = Text("?").next_to(
+            cpu_mobj.get_top() * UP + cpu_mobj.get_right() * RIGHT, UP + RIGHT, -SMALL_BUFF
+        )
+        interrogation_group = VGroup(
+            *[
+                deepcopy(interrogation_mobj).shift(idx * 0.2 * (RIGHT + UP))
+                for idx in range(3)
+            ]
+        )
+
+        self.play(AddTextWordByWord(but_how_title))
+        self.play(FadeIn(cpu_mobj), Write(interrogation_group))
         self.wait()
