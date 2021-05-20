@@ -3,11 +3,12 @@
 """
 @author : Romain Graux
 @date : 2021 May 17, 23:18:19
-@last modified : 2021 May 19, 23:49:15
+@last modified : 2021 May 20, 13:55:42
 """
 
 from manim import *
 import numpy as np
+from copy import deepcopy
 
 
 class Title(Scene):
@@ -239,6 +240,20 @@ int A = 42;
         self.wait()
 
 
+def get_message_mobj(scale=0.25, opacity=1):
+    message = SVGMobject("ressources/svg/message.svg")
+    message.set_fill(WHITE, opacity=opacity)
+    message.scale(scale)
+    return message
+
+
+def get_lock_mobj(scale=0.25, opacity=1):
+    message = SVGMobject("ressources/svg/lock.svg")
+    message.set_fill(RED, opacity=opacity)
+    message.scale(scale)
+    return message
+
+
 class ASMStates(Scene):
     def get_data_access_block(self, height=2.5, width=3.7, values=None):
         block = VGroup()
@@ -393,18 +408,6 @@ class ASMStates(Scene):
 
         self.wait()
 
-        def get_message_mobj(scale=0.25, opacity=1):
-            message = SVGMobject("ressources/svg/message.svg")
-            message.set_fill(WHITE, opacity=opacity)
-            message.scale(scale)
-            return message
-
-        def get_lock_mobj(scale=0.25, opacity=1):
-            message = SVGMobject("ressources/svg/lock.svg")
-            message.set_fill(RED, opacity=opacity)
-            message.scale(scale)
-            return message
-
         messages_group = VGroup(*[get_message_mobj() for _ in arrows_group])
         for message, arrow in zip(messages_group, arrows_group):
             message.next_to(arrow, DOWN, SMALL_BUFF)
@@ -425,4 +428,254 @@ class ASMStates(Scene):
             *[elem.animate.shift(config.frame_width * LEFT) for elem in self.mobjects]
         )
 
+        self.wait()
+
+
+class SchedulerWaitFree(Scene):
+    def get_cpu_mobj(self, color, scale):
+        cpu_mobj = SVGMobject("ressources/svg/cpu.svg")
+        if color:
+            cpu_mobj.set_fill(color, opacity=1)
+        if scale:
+            cpu_mobj.scale(scale)
+        return cpu_mobj
+
+    def stack(self, mobj, num, title=None):
+        stack = VGroup()
+        for n in range(num):
+            delta = (num - n - 1) * np.array([0.05, 0.05, -1])
+            new_mobj = deepcopy(mobj)
+            new_mobj.shift(delta)
+            stack.add(new_mobj)
+
+        if title:
+            title_mobj = Text(title)
+            title_mobj.width = 1.25 * stack.width
+            title_mobj.next_to(stack, UP, SMALL_BUFF)
+            stack.add(title_mobj)
+
+        return stack
+
+    def construct(self):
+        # TODO: cpu that talks to say : But how ready threads execute a task?
+        _TOP = config.frame_height / 2 * UP
+        _BOTTOM = -_TOP
+        _RIGHT = config.frame_width / 2 * RIGHT
+        _LEFT = -_RIGHT
+
+        N_CPUS = 3
+        H_SPACE = config.frame_width / 8
+        MARGIN = config.frame_width / 7
+        USABLE_WIDTH = config.frame_width - MARGIN
+        COL_SPACE = (USABLE_WIDTH) / N_CPUS
+
+        V_LINES = VGroup(
+            Line(
+                config.top + config.frame_width * LEFT / 2 + (MARGIN) * RIGHT,
+                config.bottom + config.frame_width * LEFT / 2 + (MARGIN) * RIGHT,
+            )
+        )
+
+        for _ in range(N_CPUS):
+            new_line = deepcopy(V_LINES.submobjects[-1])
+            V_LINES.add(new_line.shift(COL_SPACE * RIGHT))
+
+        def get_center_col(idx):
+            return VGroup(
+                V_LINES.submobjects[idx], V_LINES.submobjects[idx + 1]
+            ).get_center()
+
+        def get_center_margin():
+            return VGroup(
+                Line(_TOP + _LEFT, _BOTTOM + _LEFT), V_LINES.submobjects[0]
+            ).get_center()
+
+        cpu_mobj = self.get_cpu_mobj(None, 0.4)
+        queue_mobj = Rectangle(width=0.33 * COL_SPACE, height=0.2 * config.frame_height)
+        queue_mobj.set_fill(BLUE, opacity=0.25)
+
+        creators_group = VGroup()
+        queues_group = VGroup()
+        arrows_group = VGroup()
+        for cpu_idx in range(N_CPUS):
+            curr_cpu_mobj = deepcopy(cpu_mobj)
+            curr_cpu_mobj.move_to(get_center_col(cpu_idx))
+            curr_cpu_mobj.shift(_TOP + (MED_SMALL_BUFF + curr_cpu_mobj.height) * DOWN)
+            creators_group.add(curr_cpu_mobj)
+
+            curr_queue_mobj = deepcopy(queue_mobj)
+            curr_queue_mobj.next_to(curr_cpu_mobj, DOWN, MED_LARGE_BUFF)
+            queues_group.add(curr_queue_mobj)
+
+            arrow = Arrow(
+                curr_cpu_mobj.get_center() + curr_cpu_mobj.height * DOWN / 2,
+                curr_queue_mobj.get_center() + curr_queue_mobj.height * UP / 2,
+                buff=0,
+            )
+            arrows_group.add(arrow)
+
+        text_scale = 0.4
+        text_color = WHITE
+        margin_texts_group = VGroup()
+        creator_mobj = (
+            (Text("Creator\nThreads").scale(text_scale).set_fill(text_color, opacity=1))
+            .move_to(get_center_margin())
+            .shift(creators_group.get_center() * UP)
+        )
+        margin_texts_group.add(creator_mobj)
+
+        queue_mobj = (
+            (Text("Thread\nQueues").scale(text_scale).set_fill(text_color, opacity=1))
+            .move_to(get_center_margin())
+            .shift(queues_group.get_center() * UP)
+        )
+        margin_texts_group.add(queue_mobj)
+
+        self.play(
+            Create(creators_group),
+            Create(queues_group),
+            Create(arrows_group),
+            Write(creator_mobj),
+            Write(queue_mobj),
+        )
+        self.wait()
+
+        scheduler_queue_mobj = Rectangle(
+            width=0.8 * N_CPUS * COL_SPACE, height=0.2 * config.frame_height
+        ).next_to(queues_group, DOWN, MED_LARGE_BUFF)
+        scheduler_queue_mobj.set_fill(ORANGE, 0.25)
+
+        queues_to_scheduler_arrows_group = VGroup()
+        for queue in queues_group.submobjects:
+            start = queue.get_center() + queue.height * DOWN / 2
+            end = start + (scheduler_queue_mobj.get_top() - queues_group.get_bottom())
+            arrow = Arrow(start, end, buff=0)
+            queues_to_scheduler_arrows_group.add(arrow)
+
+        scheduler_queue_text_mobj = (
+            (
+                Text("Scheduler\n   Queue")
+                .scale(text_scale)
+                .set_fill(text_color, opacity=1)
+            )
+            .move_to(get_center_margin())
+            .shift(scheduler_queue_mobj.get_center() * UP)
+        )
+        margin_texts_group.add(scheduler_queue_text_mobj)
+
+        self.play(
+            Create(scheduler_queue_mobj),
+            Create(queues_to_scheduler_arrows_group),
+            Write(scheduler_queue_text_mobj),
+        )
+        self.wait()
+
+        workers_group = VGroup()
+        scheduler_to_workers_arrows_group = VGroup()
+        for cpu_idx in range(N_CPUS):
+            curr_cpu_mobj = deepcopy(cpu_mobj)
+            curr_cpu_mobj.move_to(get_center_col(cpu_idx))
+            curr_cpu_mobj.shift(
+                (scheduler_queue_mobj.height + MED_SMALL_BUFF + curr_cpu_mobj.height)
+                * DOWN
+            )
+            workers_group.add(curr_cpu_mobj)
+
+            arrow = Arrow(
+                curr_cpu_mobj.get_center() * RIGHT
+                + scheduler_queue_mobj.get_bottom() * UP,
+                curr_cpu_mobj.get_center() * RIGHT + curr_cpu_mobj.get_top() * UP,
+                buff=0,
+            )
+            scheduler_to_workers_arrows_group.add(arrow)
+
+        worker_mobj = (
+            (Text(" Worker\nThreads").scale(text_scale).set_fill(text_color, opacity=1))
+            .move_to(get_center_margin())
+            .shift(workers_group.get_center() * UP)
+        )
+        margin_texts_group.add(worker_mobj)
+
+        self.play(
+            Create(workers_group),
+            Create(scheduler_to_workers_arrows_group),
+            Write(worker_mobj),
+        )
+        self.wait()
+
+        lock_creator_queues_mobj = VGroup()
+        for cpu, queue in zip(creators_group, queues_group):
+            height = (
+                SMALL_BUFF
+                + (cpu.get_top() - queue.get_center() - 0.15 * queue.height)[1]
+            )
+            lock_fill_mobj = RoundedRectangle(
+                width=1.25 * queue.width, height=height, color=RED
+            )
+            lock_fill_mobj.set_fill(RED, opacity=0.1)
+            lock_fill_mobj.move_to(
+                cpu.get_center() * RIGHT
+                + (cpu.get_top() + SMALL_BUFF - lock_fill_mobj.height / 2) * UP
+            )
+
+            lock_mobj = get_lock_mobj(scale=0.15)
+            lock_mobj.next_to(
+                queue.get_right() * RIGHT + queue.get_top() * UP,
+                LEFT + DOWN,
+                SMALL_BUFF,
+            )
+
+            producer_mobj = Text("Producer").scale(text_scale).set_fill(RED, 1)
+            producer_mobj.rotate(PI / 2)
+            producer_mobj.next_to(lock_fill_mobj, LEFT, SMALL_BUFF)
+
+            lock_creator_queues_mobj.add(
+                VGroup(lock_fill_mobj, lock_mobj, producer_mobj)
+            )
+
+        height = (
+            SMALL_BUFF
+            + (
+                queue.get_center()
+                - scheduler_queue_mobj.get_bottom()
+                - 0.15 * queue.height
+            )[1]
+        )
+        lock_fill_scheduler_mobj = RoundedRectangle(
+            width=1.1 * scheduler_queue_mobj.width, height=height, color=RED
+        )
+        lock_fill_scheduler_mobj.set_fill(RED, 0.1)
+        lock_fill_scheduler_mobj.move_to(
+            scheduler_queue_mobj.get_center()
+            + (
+                SMALL_BUFF
+                + scheduler_queue_mobj.height / 2
+                - lock_fill_scheduler_mobj.height / 2
+            )
+            * DOWN
+        )
+
+        consummer_mobj = (
+            Text("Consumer")
+            .scale(text_scale)
+            .set_fill(RED, 1)
+            .rotate(PI / 2)
+            .next_to(lock_fill_scheduler_mobj, LEFT, SMALL_BUFF)
+        )
+        print(lock_fill_scheduler_mobj.get_left())
+        print(lock_fill_scheduler_mobj.get_top())
+
+        lock_mobj = get_lock_mobj(scale=0.15)
+        lock_mobj.next_to(
+            lock_fill_scheduler_mobj.get_left() * RIGHT
+            + lock_fill_scheduler_mobj.get_top() * UP,
+            DOWN + RIGHT,
+            MED_SMALL_BUFF,
+        )
+
+        lock_scheduler_mobj = VGroup(
+            lock_fill_scheduler_mobj, consummer_mobj, lock_mobj
+        )
+
+        self.play(Create(lock_creator_queues_mobj), Create(lock_scheduler_mobj))
         self.wait()
