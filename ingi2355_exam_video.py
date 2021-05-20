@@ -3,7 +3,7 @@
 """
 @author : Romain Graux
 @date : 2021 May 17, 23:18:19
-@last modified : 2021 May 20, 17:10:53
+@last modified : 2021 May 20, 18:58:36
 """
 
 from manim import *
@@ -26,8 +26,15 @@ def CounterGiveTicket(counter, ticket, cpu, width=0.5, next_to=DOWN):
     return MoveToTarget(ticket)
 
 
-def add_eyes_on_cpu(cpu):
-    eyes = SVGMobject("ressources/svg/eyes.svg")
+def get_eyes(which):
+    eyes = SVGMobject(f"ressources/svg/eyes/{which}.svg")
+    return eyes
+
+
+def add_eyes_on_cpu(cpu, which="angry", direction="left"):
+    eyes = get_eyes(which)
+    if direction.lower() in ["right"]:
+        eyes.flip(UP)
     eyes.width = 0.85 * cpu.width
     eyes.move_to(cpu.get_center()).shift(cpu.height * UP / 4)
     return VGroup(deepcopy(cpu), eyes)
@@ -764,6 +771,64 @@ class ButHowWorkers(Scene):
         self.wait()
 
 
+class WaitingQueue:
+    def __init__(self, available_places, length, color=WHITE, title=None):
+        self._available_places = available_places
+        self._hspace = length / available_places
+        self._queue = Rectangle(width=length, height=self._hspace, color=color)
+        self._vlines = VGroup(
+            *[
+                Line(self._queue.get_top(), self._queue.get_bottom()).move_to(
+                    self._queue.get_left() + idx * self._hspace * RIGHT
+                )
+                for idx in range(1, available_places)
+            ]
+        )
+        self._values = VGroup(
+            *[
+                Integer(-1)
+                .move_to(self._queue.get_left() + RIGHT * self._hspace / 2)
+                .shift(idx * self._hspace * RIGHT)
+                for idx in range(available_places)
+            ]
+        )
+
+        self._mobj = VGroup(self._queue, self._vlines, self._values)
+
+        # self._title = None
+        # if title:
+        #     self._title = Text(title)
+        #     self._title.next_to(self._queue, LEFT, SMALL_BUFF)
+        #     self._title.width = self._hspace
+        #     self._mobj.add(self._title)
+
+    @property
+    def mobj(self):
+        return self._mobj
+
+    def get(self, idx, which="center"):
+        return getattr(self[idx], f"get_{which}")
+
+    def get_center_top(self, idx):
+        return self[idx].get_center() + self._hspace * UP
+
+    def set(self, idx, function, *args, **kwargs):
+        value = self[idx]
+        center = value.get_center()
+        ret = getattr(value, function)(*args, **kwargs)
+        value.move_to(center)
+        return ret
+
+    def __getitem__(self, key):
+        return self._values.submobjects[key]
+
+    def __setitem__(self, key, value):
+        return self._values.submobjects[key]
+
+    def __len__(self):
+        return self._available_places
+
+
 class TicketScheduler(Scene):
     def create_counter(self, width, height, color=BLUE, counter_text="Now serving"):
         counter = VGroup()
@@ -873,12 +938,12 @@ class TicketScheduler(Scene):
         now_serving_mobj = self.create_counter(
             0.8 * MARGIN, 0.5 * MARGIN, BLUE, counter_text="Now serving"
         ).move_to(get_center_margin())
-        self.increment_counter(now_serving_mobj, 2)
+        self.increment_counter(now_serving_mobj, 4)
 
         next_ticket_mobj = self.create_counter(
             0.8 * MARGIN, 0.5 * MARGIN, ORANGE, counter_text="Next ticket"
         ).next_to(now_serving_mobj, DOWN, MED_SMALL_BUFF)
-        self.increment_counter(next_ticket_mobj, 3)
+        self.increment_counter(next_ticket_mobj, 5)
 
         self.play(
             FadeIn(ready_cpu_zone),
@@ -916,4 +981,34 @@ class TicketScheduler(Scene):
             FadeIn(ready_cpu_group),
             ready_text_group.animate.set_fill(WHITE, 1),
         )
+        self.wait()
+
+        waiter_queue = WaitingQueue(5, 5)
+        waiter_queue.mobj.next_to(ready_cpu_zone, DOWN, MED_LARGE_BUFF)
+        waiter_queue.set(4, "set_value", 4)
+        for idx in range(len(waiter_queue) - 1):
+            waiter_queue.set(idx, "set_value", idx)
+            waiter_queue.set(idx, "set_fill", GREY, 1)
+
+        local_now_serving_text = Text("Local\nNow\nServing")
+        local_now_serving_text.width = waiter_queue._hspace
+        local_now_serving_text.next_to(waiter_queue.mobj, RIGHT, SMALL_BUFF)
+
+        self.play(Create(waiter_queue.mobj), Write(local_now_serving_text))
+        self.wait()
+
+        down_cpus_group = VGroup()
+        for idx in range(N_CPUS):
+            direction = "right" if idx < N_CPUS / 2 else "left"
+            cpu = ready_cpu_group.submobjects[idx]
+            eyes_cpu = add_eyes_on_cpu(cpu, which="down", direction=direction)
+            down_cpus_group.add(eyes_cpu)
+
+            self.play(
+                Circumscribe(waiter_queue[idx]),
+                Circumscribe(ready_cpu_group.submobjects[idx]),
+                FadeOut(cpu),
+                FadeIn(eyes_cpu),
+            )
+
         self.wait()
