@@ -3,7 +3,7 @@
 """
 @author : Romain Graux
 @date : 2021 May 17, 23:18:19
-@last modified : 2021 May 20, 18:58:36
+@last modified : 2021 May 21, 00:35:40
 """
 
 from manim import *
@@ -11,11 +11,14 @@ import numpy as np
 from copy import deepcopy
 
 
-def IncrementCounter(counter, value=1):
+def IncrementCounter(counter, value=1, circumscribe=False):
     dec_value = list(
         filter(lambda x: isinstance(x, DecimalNumber), counter.submobjects)
     )[0]
-    return ChangeDecimalToValue(dec_value, dec_value.get_value() + value)
+    cdtv = ChangeDecimalToValue(dec_value, dec_value.get_value() + value)
+    if circumscribe:
+        return [cdtv, Circumscribe(dec_value)]
+    return cdtv
 
 
 def CounterGiveTicket(counter, ticket, cpu, width=0.5, next_to=DOWN):
@@ -24,6 +27,38 @@ def CounterGiveTicket(counter, ticket, cpu, width=0.5, next_to=DOWN):
     ticket.target.width = width
     ticket.target.next_to(cpu, next_to, SMALL_BUFF)
     return MoveToTarget(ticket)
+
+
+def get_message_mobj(scale=0.25, opacity=1):
+    message = SVGMobject("ressources/svg/message.svg")
+    message.set_fill(WHITE, opacity=opacity)
+    message.scale(scale)
+    return message
+
+
+def get_lock_mobj(scale=0.25, opacity=1):
+    message = SVGMobject("ressources/svg/lock.svg")
+    message.set_fill(RED, opacity=opacity)
+    message.scale(scale)
+    return message
+
+
+def get_cpu_mobj(scale, color=None, name=None):
+    cpu_mobj = SVGMobject("ressources/svg/cpu.svg")
+    if color:
+        cpu_mobj.set_fill(color, opacity=1)
+    if scale:
+        cpu_mobj.scale(scale)
+    if name:
+        name_text = (
+            Text(str(name))
+            .set_fill(BLACK, 1)
+            .move_to(cpu_mobj)
+            .shift((DOWN + RIGHT) * cpu_mobj.height / 10)
+        )
+        name_text.height = cpu_mobj.height / 4
+        return VGroup(cpu_mobj, name_text)
+    return cpu_mobj
 
 
 def get_eyes(which):
@@ -36,7 +71,7 @@ def add_eyes_on_cpu(cpu, which="angry", direction="left"):
     if direction.lower() in ["right"]:
         eyes.flip(UP)
     eyes.width = 0.85 * cpu.width
-    eyes.move_to(cpu.get_center()).shift(cpu.height * UP / 4)
+    eyes.move_to(cpu.get_center()).shift(cpu.height * UP / 3.5)
     return VGroup(deepcopy(cpu), eyes)
 
 
@@ -267,29 +302,6 @@ int A = 42;
             *[Uncreate(v) for v in all_vec], rendered_code.animate.shift(7 * LEFT)
         )
         self.wait()
-
-
-def get_message_mobj(scale=0.25, opacity=1):
-    message = SVGMobject("ressources/svg/message.svg")
-    message.set_fill(WHITE, opacity=opacity)
-    message.scale(scale)
-    return message
-
-
-def get_lock_mobj(scale=0.25, opacity=1):
-    message = SVGMobject("ressources/svg/lock.svg")
-    message.set_fill(RED, opacity=opacity)
-    message.scale(scale)
-    return message
-
-
-def get_cpu_mobj(color, scale):
-    cpu_mobj = SVGMobject("ressources/svg/cpu.svg")
-    if color:
-        cpu_mobj.set_fill(color, opacity=1)
-    if scale:
-        cpu_mobj.scale(scale)
-    return cpu_mobj
 
 
 class ASMStates(Scene):
@@ -829,6 +841,99 @@ class WaitingQueue:
         return self._available_places
 
 
+class DelegatinQueue:
+    def __init__(
+        self,
+        available_places,
+        length,
+        color=WHITE,
+        title=None,
+        default_values=None,
+        default_colors=None,
+    ):
+        self._available_places = available_places
+        self._hspace = length / available_places
+        self._queue = Rectangle(width=length, height=3 * self._hspace, color=color)
+        self._vlines = VGroup(
+            *[
+                Line(self._queue.get_top(), self._queue.get_bottom()).move_to(
+                    self._queue.get_left() + idx * self._hspace * RIGHT
+                )
+                for idx in range(1, available_places)
+            ]
+        )
+        self._hlines = VGroup(
+            *[
+                Line(self._queue.get_left(), self._queue.get_right()).shift(
+                    (-1) ** idx * self._hspace * UP / 2
+                )
+                for idx in range(2)
+            ]
+        )
+        if default_values is None:
+            default_values = np.full((3, available_places), -1, dtype=np.object_)
+        if default_colors is None:
+            default_colors = np.full((3, available_places), WHITE)
+        self._values = VDict(
+            {
+                key: VGroup(
+                    *[
+                        Integer(default_values[hidx, idx])
+                        .move_to(
+                            self.get_center(hidx, idx)
+                            # self._queue.get_left()
+                            # + self._hspace * (UP - hidx * DOWN + RIGHT / 2)
+                            # + (RIGHT) * self._hspace / 2
+                        )
+                        .set_fill(default_colors[hidx, idx], 1)
+                        for idx in range(available_places)
+                    ]
+                )
+                for hidx, key in enumerate(["now_serving", "result", "request"])
+            }
+        )
+
+        self._mobj = VGroup(self._queue, self._vlines, self._hlines, self._values)
+
+        # self._title = None
+        # if title:
+        #     self._title = Text(title)
+        #     self._title.next_to(self._queue, LEFT, SMALL_BUFF)
+        #     self._title.width = self._hspace
+        #     self._mobj.add(self._title)
+
+    @property
+    def mobj(self):
+        return self._mobj
+
+    def get(self, idx, which="center"):
+        return getattr(self[idx], f"get_{which}")
+
+    def get_center(self, y, x):
+        top_left = self._queue.get_top() * UP + self._queue.get_left() * RIGHT
+        return top_left + ((y + 0.5) * DOWN + (x + 0.5) * RIGHT) * self._hspace
+
+    def get_center_top(self, idx):
+        return self[idx].get_center() + self._hspace * UP
+
+    def set(self, key, function, *args, **kwargs):
+        value = self[key]
+        center = value.get_center()
+        ret = getattr(value, function)(*args, **kwargs)
+        value.move_to(center)
+        return ret
+
+    def __getitem__(self, key):
+        key_dict, key_value = key
+        return self._values[key_dict].submobjects[key_value]
+
+    # def __setitem__(self, key, value):
+    #     return self._values.submobjects[key]
+
+    def __len__(self):
+        return self._available_places
+
+
 class TicketScheduler(Scene):
     def create_counter(self, width, height, color=BLUE, counter_text="Now serving"):
         counter = VGroup()
@@ -880,6 +985,11 @@ class TicketScheduler(Scene):
         USABLE_WIDTH = config.frame_width - MARGIN
         COL_SPACE = (USABLE_WIDTH) / N_CPUS
 
+        CPU_SIZE = 0.4
+        BUBBLE_TEXT_SIZE = 0.4
+
+        info = np.array([dict() for _ in range(N_CPUS)])
+
         V_LINES = VGroup(
             Line(
                 config.top + config.frame_width * LEFT / 2 + (MARGIN) * RIGHT,
@@ -901,13 +1011,13 @@ class TicketScheduler(Scene):
                 Line(_TOP + _LEFT, _BOTTOM + _LEFT), V_LINES.submobjects[0]
             ).get_center()
 
-        cpu_mobj = get_cpu_mobj(None, 0.4)
-        imready_mobj = Text("I'm ready!").scale(0.33)
+        cpu_mobj = get_cpu_mobj(CPU_SIZE)
+        imready_mobj = Text("I'm ready!").scale(BUBBLE_TEXT_SIZE)
 
         ready_cpu_group = VGroup()
         ready_text_group = VGroup()
         for cpu_idx in range(N_CPUS):
-            curr_cpu_mobj = deepcopy(cpu_mobj)
+            curr_cpu_mobj = get_cpu_mobj(CPU_SIZE, name=1 + cpu_idx * 8)
             curr_cpu_mobj.move_to(get_center_col(cpu_idx))
             curr_cpu_mobj.shift(_TOP + (MED_SMALL_BUFF + curr_cpu_mobj.height) * DOWN)
             ready_cpu_group.add(curr_cpu_mobj)
@@ -930,14 +1040,26 @@ class TicketScheduler(Scene):
 
         ready_cpu_zone_text = (
             Text(" Ready\nthreads")
-            .scale(0.4)
+            .scale(0.5)
             .next_to(ready_cpu_zone, LEFT, 0)
+            .shift(MARGIN * LEFT / 2)
+        )
+
+        computing_zone = deepcopy(ready_cpu_zone)
+        computing_zone.set_fill(RED, 0.05)
+        computing_zone.color = RED
+        computing_zone.move_to(np.array([1, -1, 1]) * ready_cpu_zone.get_center())
+
+        computing_zone_text = (
+            Text("Locked\nthreads")
+            .scale(0.5)
+            .next_to(computing_zone, LEFT, 0)
             .shift(MARGIN * LEFT / 2)
         )
 
         now_serving_mobj = self.create_counter(
             0.8 * MARGIN, 0.5 * MARGIN, BLUE, counter_text="Now serving"
-        ).move_to(get_center_margin())
+        )
         self.increment_counter(now_serving_mobj, 4)
 
         next_ticket_mobj = self.create_counter(
@@ -945,16 +1067,42 @@ class TicketScheduler(Scene):
         ).next_to(now_serving_mobj, DOWN, MED_SMALL_BUFF)
         self.increment_counter(next_ticket_mobj, 5)
 
+        VGroup(now_serving_mobj, next_ticket_mobj).move_to(_LEFT + MARGIN * RIGHT / 2)
+
+        computing_cpu = get_cpu_mobj(CPU_SIZE, name=7)
+        computing_cpu.move_to(computing_zone)
+
+        ivethelock = (
+            Text("I have the lock!")
+            .scale(BUBBLE_TEXT_SIZE)
+            .next_to(
+                computing_cpu,
+                UP + RIGHT,
+                SMALL_BUFF,
+            )
+        )
+
         self.play(
             FadeIn(ready_cpu_zone),
             Write(ready_cpu_zone_text),
+            FadeIn(computing_zone),
+            Write(computing_zone_text),
             Create(now_serving_mobj),
             Create(next_ticket_mobj),
+            Create(computing_cpu),
         )
         self.wait()
+        self.play(Write(ivethelock))
+        self.wait()
 
-        for cpu, imready in zip(ready_cpu_group.submobjects, ready_text_group):
+        tickets_group = VGroup()
+        for idx, (cpu, imready) in enumerate(
+            zip(ready_cpu_group.submobjects, ready_text_group)
+        ):
             ticket = self.create_ticket(self.get_next_ticket_value(next_ticket_mobj))
+            info[idx]["cpu"] = cpu
+            info[idx]["ticket"] = ticket
+            info[idx]["imready"] = imready
             self.play(
                 Create(cpu),
                 Write(imready),
@@ -965,11 +1113,15 @@ class TicketScheduler(Scene):
                 IncrementCounter(next_ticket_mobj),
             )
             self.wait()
+            tickets_group.add(ticket)
 
         eyes_cpu_group = VGroup()
         todo = []
-        for cpu, imready in zip(ready_cpu_group.submobjects, ready_text_group):
+        for idx, (cpu, imready) in enumerate(
+            zip(ready_cpu_group.submobjects, ready_text_group)
+        ):
             eyes_cpu = add_eyes_on_cpu(cpu)
+            info[idx]["eyes_cpu"] = eyes_cpu
             eyes_cpu_group.add(eyes_cpu)
             todo += [FadeOut(cpu), FadeIn(eyes_cpu), imready.animate.set_fill(RED, 1)]
 
@@ -983,7 +1135,11 @@ class TicketScheduler(Scene):
         )
         self.wait()
 
-        waiter_queue = WaitingQueue(5, 5)
+        _height_available = (
+            ready_cpu_zone.get_bottom() - computing_zone.get_top() - 2 * MED_LARGE_BUFF
+        )[1]
+        _length_queue = 5 * _height_available / 3
+        waiter_queue = WaitingQueue(5, _length_queue)
         waiter_queue.mobj.next_to(ready_cpu_zone, DOWN, MED_LARGE_BUFF)
         waiter_queue.set(4, "set_value", 4)
         for idx in range(len(waiter_queue) - 1):
@@ -1011,4 +1167,104 @@ class TicketScheduler(Scene):
                 FadeIn(eyes_cpu),
             )
 
+        self.wait()
+
+        default_values = np.full((3, 5), -1, dtype=np.int32)
+        default_values[0, :] = np.arange(5)
+        default_colors = np.c_[np.full((3, 4), GREY), np.full((3, 1), WHITE)]
+        delegation_queue = DelegatinQueue(
+            5,
+            _length_queue,
+            default_values=default_values,
+            default_colors=default_colors,
+        )
+        delegation_queue.mobj.next_to(ready_cpu_zone, DOWN, MED_LARGE_BUFF)
+
+        result_text = (
+            Text("Results")
+            .move_to(local_now_serving_text)
+            .shift(delegation_queue._hspace * DOWN)
+        )
+        result_text.width = delegation_queue._hspace
+
+        request_text = (
+            Text("Requests").move_to(result_text).shift(delegation_queue._hspace * DOWN)
+        )
+        request_text.width = delegation_queue._hspace
+
+        delegation_text = VGroup(result_text, request_text)
+
+        self.play(
+            Uncreate(waiter_queue.mobj),
+        )
+
+        self.play(
+            Write(delegation_text),
+            Create(delegation_queue.mobj),
+        )
+
+        delegation_text += local_now_serving_text
+
+        for idx, (cpu, value) in enumerate(zip(eyes_cpu_group, (1, 9))):
+            value_to_change = delegation_queue[("request", idx)]
+            # delegation_queue.set(("request", idx), "increment_value", value + 1)
+            self.play(
+                ChangeDecimalToValue(value_to_change, value),
+                Circumscribe(value_to_change),
+                Circumscribe(cpu),
+            )
+
+        self.wait()
+
+        byebye = Text("Finished, bye bye").scale(BUBBLE_TEXT_SIZE)
+        byebye.next_to(computing_cpu, UP + RIGHT, SMALL_BUFF)
+        byebye.generate_target()
+        byebye.target.shift(10 * RIGHT)
+
+        computing_cpu.generate_target()
+        computing_cpu.target.shift(10 * RIGHT)
+
+        self.play(FadeOut(ivethelock), FadeIn(byebye))
+        self.play(
+            MoveToTarget(computing_cpu),
+            MoveToTarget(byebye),
+        )
+        self.wait()
+
+        self.play(
+            *IncrementCounter(now_serving_mobj, circumscribe=True),
+            ChangeDecimalToValue(delegation_queue[("now_serving", 0)], 5),
+        )
+        self.wait()
+
+        now_computing_cpu = info[0]["eyes_cpu"]
+
+        noresult = (
+            Text("No result?")
+            .scale(BUBBLE_TEXT_SIZE)
+            .next_to(now_computing_cpu.get_corner(UP + RIGHT), UP + RIGHT, SMALL_BUFF)
+        )
+
+        myturnthen = (
+            Text("My turn then...")
+            .scale(BUBBLE_TEXT_SIZE)
+            .next_to(now_computing_cpu.get_corner(UP + RIGHT), UP + RIGHT, SMALL_BUFF)
+        )
+
+        now_computing_cpu.generate_target()
+        now_computing_cpu.target.move_to(computing_zone)
+
+        self.play(Unwrite(info[0]["imready"]))
+        self.wait()
+        self.play(Write(noresult))
+        self.wait()
+        self.play(Unwrite(noresult))
+        self.wait()
+        self.play(Write(myturnthen))
+
+        # self.play(
+        #     Unwrite(myturnthen),
+        #     Uncreate(info[0]["ticket"]),
+        #     MoveToTarget(now_computing_cpu),
+        # )
         self.wait()
