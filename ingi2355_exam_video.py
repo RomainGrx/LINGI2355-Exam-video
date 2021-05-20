@@ -3,12 +3,34 @@
 """
 @author : Romain Graux
 @date : 2021 May 17, 23:18:19
-@last modified : 2021 May 20, 14:35:12
+@last modified : 2021 May 20, 17:10:53
 """
 
 from manim import *
 import numpy as np
 from copy import deepcopy
+
+
+def IncrementCounter(counter, value=1):
+    dec_value = list(
+        filter(lambda x: isinstance(x, DecimalNumber), counter.submobjects)
+    )[0]
+    return ChangeDecimalToValue(dec_value, dec_value.get_value() + value)
+
+
+def CounterGiveTicket(counter, ticket, cpu, width=0.5, next_to=DOWN):
+    ticket.next_to(counter.get_center(), IN, 0)
+    ticket.generate_target()
+    ticket.target.width = width
+    ticket.target.next_to(cpu, next_to, SMALL_BUFF)
+    return MoveToTarget(ticket)
+
+
+def add_eyes_on_cpu(cpu):
+    eyes = SVGMobject("ressources/svg/eyes.svg")
+    eyes.width = 0.85 * cpu.width
+    eyes.move_to(cpu.get_center()).shift(cpu.height * UP / 4)
+    return VGroup(deepcopy(cpu), eyes)
 
 
 class Title(Scene):
@@ -726,7 +748,9 @@ class ButHowWorkers(Scene):
             rect_text.get_top() * UP + rect_text.get_right() * RIGHT, DOWN + LEFT, 0
         )
         interrogation_mobj = Text("?").next_to(
-            cpu_mobj.get_top() * UP + cpu_mobj.get_right() * RIGHT, UP + RIGHT, -SMALL_BUFF
+            cpu_mobj.get_top() * UP + cpu_mobj.get_right() * RIGHT,
+            UP + RIGHT,
+            -SMALL_BUFF,
         )
         interrogation_group = VGroup(
             *[
@@ -737,4 +761,159 @@ class ButHowWorkers(Scene):
 
         self.play(AddTextWordByWord(but_how_title))
         self.play(FadeIn(cpu_mobj), Write(interrogation_group))
+        self.wait()
+
+
+class TicketScheduler(Scene):
+    def create_counter(self, width, height, color=BLUE, counter_text="Now serving"):
+        counter = VGroup()
+        rect = Rectangle(width=width, height=height, color=color).set_fill(
+            color, opacity=0.5
+        )
+
+        counter.add(rect)
+
+        text = Text(counter_text, color=WHITE)
+        text.width = 0.85 * rect.width
+        text.next_to(rect.get_center() * RIGHT + rect.get_top() * UP, DOWN, SMALL_BUFF)
+        counter.add(text)
+
+        value = Integer(0)
+        value.move_to(rect.get_center()).shift(DOWN * text.height / 2)
+        counter.add(value)
+
+        return counter
+
+    def create_ticket(self, num, radius=0.01, color=ORANGE):
+        circle = Circle(radius=radius, color=color).set_fill(color, opacity=0.7)
+        ticket = Text(f"Ticket {num}", color=WHITE)
+        ticket.width = 1.8 * radius
+
+        return VGroup(circle, ticket)
+
+    def get_next_ticket_value(self, counter):
+        dec_value = list(
+            filter(lambda x: isinstance(x, DecimalNumber), counter.submobjects)
+        )[0]
+        return dec_value.get_value()
+
+    def increment_counter(self, counter, value=1):
+        dec_value = list(
+            filter(lambda x: isinstance(x, DecimalNumber), counter.submobjects)
+        )[0]
+        dec_value.increment_value(value)
+
+    def construct(self):
+        _TOP = config.frame_height / 2 * UP
+        _BOTTOM = -_TOP
+        _RIGHT = config.frame_width / 2 * RIGHT
+        _LEFT = -_RIGHT
+
+        N_CPUS = 2
+        H_SPACE = config.frame_width / 8
+        MARGIN = config.frame_width / 5
+        USABLE_WIDTH = config.frame_width - MARGIN
+        COL_SPACE = (USABLE_WIDTH) / N_CPUS
+
+        V_LINES = VGroup(
+            Line(
+                config.top + config.frame_width * LEFT / 2 + (MARGIN) * RIGHT,
+                config.bottom + config.frame_width * LEFT / 2 + (MARGIN) * RIGHT,
+            )
+        )
+
+        for _ in range(N_CPUS):
+            new_line = deepcopy(V_LINES.submobjects[-1])
+            V_LINES.add(new_line.shift(COL_SPACE * RIGHT))
+
+        def get_center_col(idx):
+            return VGroup(
+                V_LINES.submobjects[idx], V_LINES.submobjects[idx + 1]
+            ).get_center()
+
+        def get_center_margin():
+            return VGroup(
+                Line(_TOP + _LEFT, _BOTTOM + _LEFT), V_LINES.submobjects[0]
+            ).get_center()
+
+        cpu_mobj = get_cpu_mobj(None, 0.4)
+        imready_mobj = Text("I'm ready!").scale(0.33)
+
+        ready_cpu_group = VGroup()
+        ready_text_group = VGroup()
+        for cpu_idx in range(N_CPUS):
+            curr_cpu_mobj = deepcopy(cpu_mobj)
+            curr_cpu_mobj.move_to(get_center_col(cpu_idx))
+            curr_cpu_mobj.shift(_TOP + (MED_SMALL_BUFF + curr_cpu_mobj.height) * DOWN)
+            ready_cpu_group.add(curr_cpu_mobj)
+
+            ready_text_group.add(
+                deepcopy(imready_mobj).next_to(curr_cpu_mobj, RIGHT + UP, SMALL_BUFF)
+            )
+
+        ready_cpu_zone = (
+            RoundedRectangle(
+                width=0.90 * USABLE_WIDTH, height=config.frame_height / 3.5, color=GREY
+            )
+            .set_fill(GREY, opacity=0.1)
+            .next_to(
+                _TOP + (_LEFT + MARGIN * RIGHT + _RIGHT) / 2,
+                DOWN,
+                SMALL_BUFF,
+            )
+        )
+
+        ready_cpu_zone_text = (
+            Text(" Ready\nthreads")
+            .scale(0.4)
+            .next_to(ready_cpu_zone, LEFT, 0)
+            .shift(MARGIN * LEFT / 2)
+        )
+
+        now_serving_mobj = self.create_counter(
+            0.8 * MARGIN, 0.5 * MARGIN, BLUE, counter_text="Now serving"
+        ).move_to(get_center_margin())
+        self.increment_counter(now_serving_mobj, 2)
+
+        next_ticket_mobj = self.create_counter(
+            0.8 * MARGIN, 0.5 * MARGIN, ORANGE, counter_text="Next ticket"
+        ).next_to(now_serving_mobj, DOWN, MED_SMALL_BUFF)
+        self.increment_counter(next_ticket_mobj, 3)
+
+        self.play(
+            FadeIn(ready_cpu_zone),
+            Write(ready_cpu_zone_text),
+            Create(now_serving_mobj),
+            Create(next_ticket_mobj),
+        )
+        self.wait()
+
+        for cpu, imready in zip(ready_cpu_group.submobjects, ready_text_group):
+            ticket = self.create_ticket(self.get_next_ticket_value(next_ticket_mobj))
+            self.play(
+                Create(cpu),
+                Write(imready),
+            )
+            self.wait()
+            self.play(
+                CounterGiveTicket(next_ticket_mobj, ticket, cpu),
+                IncrementCounter(next_ticket_mobj),
+            )
+            self.wait()
+
+        eyes_cpu_group = VGroup()
+        todo = []
+        for cpu, imready in zip(ready_cpu_group.submobjects, ready_text_group):
+            eyes_cpu = add_eyes_on_cpu(cpu)
+            eyes_cpu_group.add(eyes_cpu)
+            todo += [FadeOut(cpu), FadeIn(eyes_cpu), imready.animate.set_fill(RED, 1)]
+
+        self.play(*todo)
+        self.wait()
+
+        self.play(
+            FadeOut(eyes_cpu_group),
+            FadeIn(ready_cpu_group),
+            ready_text_group.animate.set_fill(WHITE, 1),
+        )
         self.wait()
