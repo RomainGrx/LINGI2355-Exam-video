@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="70.298096mm"
+   height="63.341248mm"
+   viewBox="0 0 70.298096 63.341248"
+   version="1.1"
+   id="svg1610"
+   inkscape:version="1.0.2 (e86c870, 2021-01-15)"
+   sodipodi:docname="happy.svg">
+  <defs
+     id="defs1604">
+    <radialGradient
+       id="SVGID_13_"
+       cx="186.8046"
+       cy="275.46179"
+       r="66.994102"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         style="stop-color:#FFFFFF"
+         id="stop1315" />
+      <stop
+         offset="0.4408"
+         style="stop-color:#FDFDFD"
+         id="stop1317" />
+      <stop
+         offset="0.6288"
+         style="stop-color:#F6F6F6"
+         id="stop1319" />
+      <stop
+         offset="0.7688"
+         style="stop-color:#E9E9E9"
+         id="stop1321" />
+      <stop
+         offset="0.8844"
+         style="stop-color:#D8D8D8"
+         id="stop1323" />
+      <stop
+         offset="0.9847"
+         style="stop-color:#C1C1C1"
+         id="stop1325" />
+      <stop
+         offset="1"
+         style="stop-color:#BDBDBD"
+         id="stop1327" />
+    </radialGradient>
+    <radialGradient
+       id="SVGID_14_"
+       cx="299.36041"
+       cy="288.2467"
+       r="60.747002"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         style="stop-color:#FFFFFF"
+         id="stop1354" />
+      <stop
+         offset="0.4408"
+         style="stop-color:#FDFDFD"
+         id="stop1356" />
+      <stop
+         offset="0.6288"
+         style="stop-color:#F6F6F6"
+         id="stop1358" />
+      <stop
+         offset="0.7688"
+         style="stop-color:#E9E9E9"
+         id="stop1360" />
+      <stop
+         offset="0.8844"
+         style="stop-color:#D8D8D8"
+         id="stop1362" />
+      <stop
+         offset="0.9847"
+         style="stop-color:#C1C1C1"
+         id="stop1364" />
+      <stop
+         offset="1"
+         style="stop-color:#BDBDBD"
+         id="stop1366" />
+    </radialGradient>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="2.8"
+     inkscape:cx="299.7562"
+     inkscape:cy="162.90835"
+     inkscape:document-units="mm"
+     inkscape:current-layer="g1373"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     inkscape:window-width="1848"
+     inkscape:window-height="1016"
+     inkscape:window-x="72"
+     inkscape:window-y="1107"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata1607">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(192.38714,12.015863)">
+    <g
+       id="g1352"
+       transform="matrix(0.26458333,0,0,0.26458333,-220.06426,-45.221071)">
+      <g
+         id="g1342">
+        <g
+           id="g1334">
+          <radialGradient
+             id="radialGradient1558"
+             cx="186.8046"
+             cy="275.46179"
+             r="66.994102"
+             gradientUnits="userSpaceOnUse">
+            <stop
+               offset="0"
+               style="stop-color:#FFFFFF"
+               id="stop1544" />
+            <stop
+               offset="0.4408"
+               style="stop-color:#FDFDFD"
+               id="stop1546" />
+            <stop
+               offset="0.6288"
+               style="stop-color:#F6F6F6"
+               id="stop1548" />
+            <stop
+               offset="0.7688"
+               style="stop-color:#E9E9E9"
+               id="stop1550" />
+            <stop
+               offset="0.8844"
+               style="stop-color:#D8D8D8"
+               id="stop1552" />
+            <stop
+               offset="0.9847"
+               style="stop-color:#C1C1C1"
+               id="stop1554" />
+            <stop
+               offset="1"
+               style="stop-color:#BDBDBD"
+               id="stop1556" />
+          </radialGradient>
+          <path
+             fill="url(#SVGID_13_)"
+             d="m 129.8,275.1 c -0.2,41.8 25.1,75.8 56.6,76 31.5,0.2 57.2,-33.6 57.4,-75.4 0.2,-41.8 -25.1,-75.8 -56.6,-76 -31.4,-0.1 -57.2,33.6 -57.4,75.4 z"
+             id="path1330"
+             style="fill:#ececec" />
+          <path
+             d="m 186.6,353.7 c 0,0 0,0 0,0 h -0.3 c -16,-0.1 -31,-8.4 -42.2,-23.4 -11,-14.8 -17,-34.4 -16.9,-55.1 0.2,-43 27,-77.9 59.7,-77.9 h 0.3 c 16,0.1 31,8.4 42.2,23.4 11,14.8 17,34.4 16.9,55.1 -0.2,43 -27,77.9 -59.7,77.9 z M 187,202.3 c -29.9,0 -54.4,32.7 -54.6,72.8 -0.1,19.7 5.5,38.2 15.9,52.1 10.2,13.7 23.7,21.3 38.1,21.4 h 0.2 c 29.9,0 54.4,-32.7 54.6,-72.8 0.1,-19.7 -5.5,-38.2 -15.9,-52.1 -10.2,-13.7 -23.7,-21.3 -38.1,-21.4 z"
+             id="path1332" />
+        </g>
+        <g
+           id="g1338">
+          <circle
+             fill="#0b0b0b"
+             cx="190.89999"
+             cy="234.5"
+             r="20.299999"
+             id="circle1336" />
+        </g>
+        <circle
+           fill="#ffffff"
+           cx="198.2"
+           cy="228.39999"
+           r="7.6999998"
+           id="circle1340" />
+      </g>
+      <g
+         id="g1346">
+        <path
+           fill="#0b0b0b"
+           d="m 135,216.2 c 0,0 -41.7,67.5 11.9,126.3 0,0 -64.8,-53.6 -11.9,-126.3 z"
+           id="path1344" />
+      </g>
+      <g
+         id="g1350">
+        <path
+           fill="#0b0b0b"
+           d="m 105.9,267.1 c 0,0 0,43 28.4,69.4 0.1,0.1 -37,-17.1 -28.4,-69.4 z"
+           id="path1348" />
+      </g>
+    </g>
+    <g
+       id="g1391"
+       transform="matrix(0.26458333,0,0,0.26458333,-220.06426,-45.221071)">
+      <g
+         id="g1381">
+        <g
+           id="g1373">
+          <radialGradient
+             id="radialGradient1586"
+             cx="299.36041"
+             cy="288.2467"
+             r="60.747002"
+             gradientUnits="userSpaceOnUse">
+            <stop
+               offset="0"
+               style="stop-color:#FFFFFF"
+               id="stop1572" />
+            <stop
+               offset="0.4408"
+               style="stop-color:#FDFDFD"
+               id="stop1574" />
+            <stop
+               offset="0.6288"
+               style="stop-color:#F6F6F6"
+               id="stop1576" />
+            <stop
+               offset="0.7688"
+               style="stop-color:#E9E9E9"
+               id="stop1578" />
+            <stop
+               offset="0.8844"
+               style="stop-color:#D8D8D8"
+               id="stop1580" />
+            <stop
+               offset="0.9847"
+               style="stop-color:#C1C1C1"
+               id="stop1582" />
+            <stop
+               offset="1"
+               style="stop-color:#BDBDBD"
+               id="stop1584" />
+          </radialGradient>
+          <path
+             fill="url(#SVGID_14_)"
+             d="m 351,288 c 0.2,37.9 -22.8,68.8 -51.3,68.9 -28.5,0.2 -51.9,-30.4 -52.1,-68.3 -0.2,-37.9 22.8,-68.8 51.3,-68.9 28.6,-0.2 51.9,30.4 52.1,68.3 z"
+             id="path1369"
+             style="fill:#ececec" />
+          <path
+             d="m 299.5,359.4 c -29.8,0 -54.2,-31.8 -54.4,-70.9 -0.2,-39.2 23.9,-71.3 53.8,-71.5 h 0.2 c 29.8,0 54.2,31.8 54.4,70.9 0.1,18.9 -5.4,36.7 -15.4,50.2 -10.2,13.7 -23.8,21.3 -38.5,21.3 z M 299.2,222.2 H 299 c -27.1,0.2 -49,29.9 -48.8,66.3 0.2,36.3 22.3,65.8 49.3,65.8 h 0.2 c 13,-0.1 25.2,-6.9 34.4,-19.3 9.4,-12.6 14.5,-29.3 14.4,-47.1 -0.2,-36.2 -22.3,-65.7 -49.3,-65.7 z"
+             id="path1371" />
+        </g>
+        <g
+           id="g1377">
+          <circle
+             fill="#0b0b0b"
+             cx="295.60001"
+             cy="251.10001"
+             r="18.4"
+             id="circle1375" />
+        </g>
+        <circle
+           fill="#ffffff"
+           cx="302.29999"
+           cy="248.8"
+           r="7.6999998"
+           id="circle1379" />
+      </g>
+      <g
+         id="g1385">
+        <path
+           fill="#0b0b0b"
+           d="m 355.1,256.5 c 0,0 21.5,68.6 -38.7,108.4 0,0 69,-32.6 38.7,-108.4 z"
+           id="path1383" />
+      </g>
+      <g
+         id="g1389">
+        <path
+           fill="#0b0b0b"
+           d="m 369.3,307.8 c 0,0 -9.6,37.8 -40.5,54.7 0,0 36.4,-6.9 40.5,-54.7 z"
+           id="path1387" />
+      </g>
+    </g>
+    <g
+       id="g1395"
+       transform="matrix(0.26458333,0,0,0.26458333,-220.06426,-45.221071)">
+      <path
+         fill="#0b0b0b"
+         d="m 370.3,265.1 c 0,0 -15.1,-43.5 -41.1,-52.7 -26.1,-9.3 -30.1,-4.6 -30.1,-4.6 0,0 -4.6,-25.5 13.9,-25.5 18.5,0 48.6,33.6 57.3,82.8 z"
+         id="path1393" />
+    </g>
+    <g
+       id="g1399"
+       transform="matrix(0.26458333,0,0,0.26458333,-220.06426,-45.221071)">
+      <path
+         fill="#0b0b0b"
+         d="m 126.4,216.9 c 0,0 16.6,-47.9 45.4,-58.2 28.8,-10.3 33.2,-5.1 33.2,-5.1 0,0 5.1,-28.1 -15.3,-28.1 -20.4,0 -53.8,37.1 -63.3,91.4 z"
+         id="path1397" />
+    </g>
+  </g>
+</svg>

@@ -3,7 +3,7 @@
 """
 @author : Romain Graux
 @date : 2021 May 17, 23:18:19
-@last modified : 2021 May 21, 00:35:40
+@last modified : 2021 May 21, 17:53:45
 """
 
 from manim import *
@@ -77,25 +77,39 @@ def add_eyes_on_cpu(cpu, which="angry", direction="left"):
 
 class Title(Scene):
     def construct(self):
-        this_is = Tex("This is the presentation of")
-        this_is.shift(0 * LEFT + 2 * UP)
 
-        paper = Tex(
+        frame = Rectangle(
+            width=0.85 * config.frame_width, height=0.8 * config.frame_height
+        )
+
+        this_is = Tex("This is the presentation of")
+        this_is.next_to(frame.get_top(), DOWN, 0)
+
+        paper_name = Tex(
             '"Advanced synchronization techniques \
                     for task-based runtime systems"'
-        )
-        paper.scale(0.75)
+        ).move_to(frame)
+        paper_name.width = frame.width
 
         in_5_minutes = Tex("in 5 minutes...")
-        in_5_minutes.shift(4 * RIGHT + 3 * DOWN)
+        in_5_minutes.next_to(frame.get_corner(DOWN + RIGHT), UP + LEFT, 0)
+
+        paper_link = (
+            Tex("https://dl.acm.org/doi/10.1145/3437801.3441601", color=BLUE)
+            .scale(0.5)
+            .next_to(frame.get_corner(DOWN + LEFT), UP + RIGHT, 0)
+        )
 
         self.play(Write(this_is))
-
-        self.play(FadeIn(paper))
-
         self.wait()
 
+        self.play(FadeIn(paper_name))
+
+        self.wait()
         self.play(Write(in_5_minutes))
+
+        self.wait()
+        self.play(FadeIn(paper_link))
 
         self.wait()
 
@@ -144,15 +158,57 @@ class CoresEvolution(GraphScene):
         )
 
     def construct(self):
+        from scipy.optimize import curve_fit
 
         self.setup_axes(animate=True)
 
-        for x, y in EvolutionCPUGraph.CPU_CORES.items():
+        X = np.array(list(CoresEvolution.CPU_CORES.keys()))
+        y = np.array(list(CoresEvolution.CPU_CORES.values()))
+
+        [a, b], res1 = curve_fit(lambda x1, a, b: a * np.exp(b * (x1 - 2000)), X, y)
+
+        func = lambda v: a * np.exp(b * (v - 2000))
+
+        graph = self.get_graph(func, x_min=X[0], x_max=X[-1], y_max=128, color=ORANGE)
+
+        for x, y in CoresEvolution.CPU_CORES.items():
             d = Dot(color=BLUE).move_to(self.coords_to_point(x, y))
-            self.add(d)
-            self.wait()
+            self.play(Create(d))
+            self.wait(0)
+
+        self.play(Create(graph))
 
         self.wait()
+
+
+class PaperSummary(Scene):
+    def construct(self):
+        text_scale = 0.8
+
+        frame = Rectangle(
+            width=0.85 * config.frame_width, height=0.7 * config.frame_height
+        )
+
+        title = Text("Paper improvements").next_to(frame.get_top(), DOWN, 0)
+
+        p01 = (
+            Text("Wait-free data structure")
+            .scale(text_scale)
+            .next_to(frame.get_left(), RIGHT, 0)
+            .shift(RIGHT + UP + 0.5 * DOWN)
+        )
+        p02 = (
+            Text("Task scheduler based on delegation")
+            .scale(text_scale)
+            .next_to(frame.get_left(), RIGHT, 0)
+            .shift(RIGHT + 1.5 * DOWN)
+        )
+
+        self.play(FadeIn(title))
+
+        for p in (p01, p02):
+            d = Dot(color=BLUE).next_to(p, LEFT, SMALL_BUFF)
+            self.play(Write(p), Create(d))
 
 
 class DataDependencies(Scene):
@@ -187,7 +243,7 @@ int A = 42;
         width_code = rendered_code.width
         height_code = rendered_code.height
 
-        self.play(Create(rendered_code))
+        self.play(Create(rendered_code), run_time=2)
 
         self.wait()
 
@@ -240,7 +296,7 @@ int A = 42;
 
         parent1 = get_default_task("A", BLUE, tasks_pos[0])
 
-        self.play(Create(parent1), Create(arrow))
+        self.play(Create(parent1), Create(arrow), run_time=2)
 
         self.wait()
 
@@ -252,9 +308,7 @@ int A = 42;
         arrow.target.shift(2 * step_arrow())
 
         self.play(
-            MoveToTarget(arrow),
-            Create(child1),
-            Create(parent1_to_child1),
+            MoveToTarget(arrow), Create(child1), Create(parent1_to_child1), run_time=2
         )
 
         self.wait()
@@ -266,9 +320,7 @@ int A = 42;
         arrow.target.shift(2 * step_arrow())
 
         self.play(
-            MoveToTarget(arrow),
-            Create(parent2),
-            Create(parent1_to_parent2),
+            MoveToTarget(arrow), Create(parent2), Create(parent1_to_parent2), run_time=2
         )
 
         self.wait()
@@ -280,9 +332,7 @@ int A = 42;
         arrow.target.shift(2 * step_arrow())
 
         self.play(
-            MoveToTarget(arrow),
-            Create(child2),
-            Create(parent2_to_child2),
+            MoveToTarget(arrow), Create(child2), Create(parent2_to_child2), run_time=2
         )
 
         self.wait()
@@ -321,7 +371,7 @@ class ASMStates(Scene):
         attrs.scale(0.5)
         attrs.next_to(h_line.get_left(), DOWN + RIGHT, buff=SMALL_BUFF)
 
-        values_text = values or ["IN", "0x9F3B", "0x6DFF", "0xF3BB", "0xFF24"]
+        values_text = values or ["IN", "0x9F3B", "0x6DFF", "NULL", "0xFF24"]
 
         values = Paragraph(*values_text, name="values")
         values.scale(0.5)
@@ -360,7 +410,7 @@ class ASMStates(Scene):
         data_access_block = self.get_data_access_block()
         data_access_block.move_to(ORIGIN)
 
-        self.play(Create(data_access_block))
+        self.play(Create(data_access_block), run_time=2)
         self.play(Circumscribe(data_access_block))
         self.wait()
 
@@ -368,9 +418,7 @@ class ASMStates(Scene):
         data_access_block.target.shift(5.5 * LEFT + 2.5 * UP)
         data_access_block.target.scale(0.75)
 
-        self.play(
-            MoveToTarget(data_access_block),
-        )
+        self.play(MoveToTarget(data_access_block), run_time=2)
         data_access_block = data_access_block.target
 
         asm = self.get_asm(
@@ -385,11 +433,9 @@ class ASMStates(Scene):
         ).move_to(data_access_block.get_center() + 0.58 * DOWN)
         surr_flags.set_fill(BLUE, opacity=0.25)
 
-        self.play(Create(surr_flags))
+        self.play(Create(surr_flags), run_time=2)
 
-        self.play(
-            Transform(surr_flags, asm),
-        )
+        self.play(Transform(surr_flags, asm), run_time=2)
 
         arrow_messages = [
             None,
@@ -531,9 +577,9 @@ class SchedulerWaitFree(Scene):
                 Line(_TOP + _LEFT, _BOTTOM + _LEFT), V_LINES.submobjects[0]
             ).get_center()
 
-        cpu_mobj = get_cpu_mobj(None, 0.4)
+        cpu_mobj = get_cpu_mobj(0.4)
         queue_mobj = Rectangle(width=0.33 * COL_SPACE, height=0.2 * config.frame_height)
-        queue_mobj.set_fill(BLUE, opacity=0.25)
+        queue_mobj.set_fill(BLUE, opacity=0.5)
 
         creators_group = VGroup()
         queues_group = VGroup()
@@ -584,7 +630,7 @@ class SchedulerWaitFree(Scene):
         scheduler_queue_mobj = Rectangle(
             width=0.8 * N_CPUS * COL_SPACE, height=0.2 * config.frame_height
         ).next_to(queues_group, DOWN, MED_LARGE_BUFF)
-        scheduler_queue_mobj.set_fill(ORANGE, 0.25)
+        scheduler_queue_mobj.set_fill(GREY, 0.2)
 
         queues_to_scheduler_arrows_group = VGroup()
         for queue in queues_group.submobjects:
@@ -763,7 +809,7 @@ class ButHowWorkers(Scene):
 
         but_how_title = VGroup(but_how, workers_thread, receive_work)
 
-        cpu_mobj = get_cpu_mobj(None, 0.75).next_to(
+        cpu_mobj = get_cpu_mobj(0.75).next_to(
             rect_text.get_top() * UP + rect_text.get_right() * RIGHT, DOWN + LEFT, 0
         )
         interrogation_mobj = Text("?").next_to(
@@ -778,8 +824,9 @@ class ButHowWorkers(Scene):
             ]
         )
 
-        self.play(AddTextWordByWord(but_how_title))
-        self.play(FadeIn(cpu_mobj), Write(interrogation_group))
+        # self.play(*[Write(mobj) for mobj in but_how_title.submobjects])
+        self.play(Write(but_how_title))
+        self.play(FadeIn(cpu_mobj), Write(interrogation_group), run_time=2)
         self.wait()
 
 
@@ -935,7 +982,9 @@ class DelegatinQueue:
 
 
 class TicketScheduler(Scene):
-    def create_counter(self, width, height, color=BLUE, counter_text="Now serving"):
+    def create_counter(
+        self, width, height, color=BLUE, counter_text="Now serving", locked=True
+    ):
         counter = VGroup()
         rect = Rectangle(width=width, height=height, color=color).set_fill(
             color, opacity=0.5
@@ -951,6 +1000,11 @@ class TicketScheduler(Scene):
         value = Integer(0)
         value.move_to(rect.get_center()).shift(DOWN * text.height / 2)
         counter.add(value)
+
+        if locked:
+            lock_mobj = get_lock_mobj(0.2).set_fill(WHITE, 1)
+            lock_mobj.next_to(rect.get_corner(RIGHT + DOWN), LEFT + UP, SMALL_BUFF)
+            counter.add(lock_mobj)
 
         return counter
 
@@ -1207,13 +1261,21 @@ class TicketScheduler(Scene):
 
         for idx, (cpu, value) in enumerate(zip(eyes_cpu_group, (1, 9))):
             value_to_change = delegation_queue[("request", idx)]
-            # delegation_queue.set(("request", idx), "increment_value", value + 1)
             self.play(
                 ChangeDecimalToValue(value_to_change, value),
                 Circumscribe(value_to_change),
                 Circumscribe(cpu),
             )
 
+        self.wait()
+
+        result_to_change = delegation_queue[("result", 0)]
+        self.play(
+            ChangeDecimalToValue(result_to_change, 6), Circumscribe(result_to_change)
+        )
+        self.wait()
+
+        self.play(ChangeDecimalToValue(result_to_change, -1))
         self.wait()
 
         byebye = Text("Finished, bye bye").scale(BUBBLE_TEXT_SIZE)
@@ -1255,11 +1317,8 @@ class TicketScheduler(Scene):
         now_computing_cpu.target.move_to(computing_zone)
 
         self.play(Unwrite(info[0]["imready"]))
-        self.wait()
         self.play(Write(noresult))
-        self.wait()
         self.play(Unwrite(noresult))
-        self.wait()
         self.play(Write(myturnthen))
 
         # self.play(
@@ -1267,4 +1326,28 @@ class TicketScheduler(Scene):
         #     Uncreate(info[0]["ticket"]),
         #     MoveToTarget(now_computing_cpu),
         # )
+        self.wait()
+
+
+class ThanksForWatching(Scene):
+    def construct(self):
+        frame = Rectangle(
+            width=0.85 * config.frame_width, height=0.8 * config.frame_height
+        )
+
+        cpu_mobj = get_cpu_mobj(1.5)
+        cpu_mobj = add_eyes_on_cpu(cpu_mobj, "happy")
+
+        thanks = Text(
+            "Thanks for watching!", t2w={"world": BOLD}, gradient=(WHITE, BLUE)
+        ).next_to(cpu_mobj, UP, MED_LARGE_BUFF)
+
+        self.play(Create(cpu_mobj), Write(thanks))
+
+        link = (
+            Text("https://github.com/RomainGrx/LINGI2355-Exam-video", color=BLUE)
+            .scale(0.45)
+            .next_to(cpu_mobj, DOWN, MED_LARGE_BUFF)
+        )
+        self.play(Write(link))
         self.wait()
